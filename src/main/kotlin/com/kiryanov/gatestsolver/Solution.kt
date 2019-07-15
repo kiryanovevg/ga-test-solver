@@ -8,7 +8,10 @@ const val ANSWER_FILE = "data/answers.txt"
 const val QUESTION_BASE = "data/questions_base.txt"
 
 fun main(args: Array<String>) {
-    val questions = QuestionFileManager(QUESTION_FILE, 10).getQuestions()
+    val questionManager = QuestionFileManager(QUESTION_FILE, 10, true)
+    val questions = questionManager.getQuestions()
+    questionManager.saveQuestions(questions, QUESTION_BASE)
+
     val rating = RatingImpl(ANSWER_FILE, questions).getRating()
 
     println("Rating: $rating")

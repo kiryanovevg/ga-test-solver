@@ -6,26 +6,40 @@ import java.util.concurrent.ThreadLocalRandom
 
 class QuestionFileManager(
         private val fileName: String,
-        private val questionCount: Int
+        private val questionCount: Int,
+        private val random: Boolean = false
 ) : QuestionReader {
 
     companion object {
         private const val QUESTION_PREFIX = "###"
         private const val ANSWER_DIV = " - "
-//        private const val COUNT = 10
     }
 
     override fun getQuestions(): ArrayList<Question> = getQuestionsFromFile(File(fileName))
             .toSize(questionCount)
 
     fun saveQuestions(questions: ArrayList<Question>, fileName: String) {
-        val newQuestions = getQuestionsFromFile(File(fileName))
+        val file = File(fileName)
+        if (!file.exists()) file.createNewFile()
+
+        val newQuestions = getQuestionsFromFile(file)
                 .toHashSet()
                 .apply { addAll(questions) }
                 .toMutableList()
-                .sortBy { it.id }
+                .apply { sortBy { it.id } }
 
-        
+        file.bufferedWriter().use { writer ->
+            writer.write("")
+            newQuestions.forEach { question ->
+                writer.append("$QUESTION_PREFIX${question.text}")
+                repeat(question.answers.size) { i ->
+                    val text = question.answers[i]
+                    writer.newLine()
+                    writer.append("${i + 1}$ANSWER_DIV$text")
+                }
+                writer.newLine()
+            }
+        }
     }
 
     private fun getQuestionsFromFile(file: File): ArrayList<Question> {
@@ -55,10 +69,9 @@ class QuestionFileManager(
 
     private fun ArrayList<Question>.toSize(size: Int): ArrayList<Question> {
         while (this.size != size) {
-            val r = ThreadLocalRandom.current().nextInt(0, this.size)
-            this.removeAt(r)
+            val index = if (random) ThreadLocalRandom.current().nextInt(0, this.size) else this.size - 1
+            this.removeAt(index)
         }
-
         return this
     }
 
